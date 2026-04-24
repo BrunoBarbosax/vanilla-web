@@ -5,31 +5,39 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const axios = require('axios');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const uploadsDir = path.join(__dirname, 'uploads');
-const publicDir = path.join(__dirname, 'public');
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'vanilla-farms',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+  }
+});
+
+const upload = multer({ storage });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'segredo-vanilla',
+  secret: process.env.SESSION_SECRET || 'vanilla-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -37,18 +45,47 @@ app.use(session({
   }
 }));
 
-app.use('/uploads', express.static(uploadsDir));
-app.use(express.static(publicDir));
+app.use(express.static('public'));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '.jpg');
-    cb(null, Date.now() + '-' + Math.random().toString(36).slice(2) + ext);
+async function enviarDiscord({ tipo, usuario, conteudo, imagem }) {
+  if (!process.env.DISCORD_WEBHOOK_URL) return;
+
+  try {
+    await axios.post(process.env.DISCORD_WEBHOOK_URL, {
+      username: 'Vanilla Sistema',
+      avatar_url: 'https://cdn-icons-png.flaticon.com/512/5968/5968756.png',
+      embeds: [
+        {
+          title: `📌 Novo registro: ${tipo}`,
+          color: tipo === 'Farm' ? 0x57f287 : 0xff00b7,
+          fields: [
+            {
+              name: '👤 Usuário',
+              value: usuario || 'Desconhecido',
+              inline: true
+            },
+            {
+              name: '📂 Tipo',
+              value: tipo,
+              inline: true
+            },
+            {
+              name: '📋 Detalhes',
+              value: '```' + String(conteudo || '').slice(0, 900) + '```'
+            }
+          ],
+          image: imagem ? { url: imagem } : undefined,
+          footer: {
+            text: 'Vanilla Operações'
+          },
+          timestamp: new Date().toISOString()
+        }
+      ]
+    });
+  } catch (err) {
+    console.log('Erro ao enviar Discord:', err.message);
   }
-});
-
-const upload = multer({ storage });
+}
 
 async function initDatabase() {
   await pool.query(`
@@ -169,7 +206,10 @@ app.post('/api/login', async (req, res) => {
       is_admin: user.is_admin
     };
 
-    res.json({ success: true, user: req.session.user });
+    res.json({
+      success: true,
+      user: req.session.user
+    });
   } catch (err) {
     console.error(err);
     res.json({ error: 'Erro ao fazer login.' });
@@ -206,6 +246,12 @@ app.post('/api/log', auth, async (req, res) => {
       [req.session.user.id, tipo, conteudo]
     );
 
+    await enviarDiscord({
+      tipo,
+      usuario: req.session.user.username,
+      conteudo
+    });
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -216,21 +262,32 @@ app.post('/api/log', auth, async (req, res) => {
 app.post('/api/farm', auth, upload.single('imagem'), async (req, res) => {
   try {
     const conteudo = String(req.body.conteudo || '').trim();
-    const imagem = req.file ? req.file.filename : null;
 
     if (!conteudo) {
       return res.json({ error: 'Dados inválidos.' });
     }
+
+    const imagem = req.file ? req.file.path : null;
 
     await pool.query(
       'INSERT INTO logs (user_id, tipo, conteudo, imagem) VALUES ($1, $2, $3, $4)',
       [req.session.user.id, 'Farm', conteudo, imagem]
     );
 
-    res.json({ success: true });
+    await enviarDiscord({
+      tipo: 'Farm',
+      usuario: req.session.user.username,
+      conteudo,
+      imagem
+    });
+
+    res.json({
+      success: true,
+      imagem
+    });
   } catch (err) {
-    console.error(err);
-    res.json({ error: 'Erro ao salvar farm.' });
+    console.error('Erro Cloudinary/Farm:', err);
+    res.json({ error: 'Erro ao salvar farm/imagem.' });
   }
 });
 
@@ -282,7 +339,7 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
 initDatabase()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`🔥 Servidor rodando em http://localhost:${PORT}`);
+      console.log('🔥 Rodando em http://localhost:' + PORT);
     });
   })
   .catch((err) => {

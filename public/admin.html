@@ -350,7 +350,7 @@ function montarCards(){
 
       <pre>${escapeHtml(log.conteudo || '')}</pre>
 
-      ${log.imagem ? `<img class="comprovante" src="/uploads/${escapeHtml(log.imagem)}" alt="Comprovante">` : ''}
+      ${log.imagem ? `<img class="comprovante" src="${escapeHtml(log.imagem)}" alt="Comprovante">` : ''}
     </div>
   `).join('');
 }

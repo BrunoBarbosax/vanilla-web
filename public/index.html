@@ -504,7 +504,7 @@ async function carregarHistorico(){
       <b>${item.tipo}</b><br>
       <small>${item.data}</small><br>
       ${String(item.conteudo || "").replace(/\n/g,"<br>")}
-      ${item.imagem ? `<br><img src="/uploads/${item.imagem}">` : ""}
+      ${item.imagem ? `<br><img src="${item.imagem}">` : ""}
     </div>
   `).join("");
 }
