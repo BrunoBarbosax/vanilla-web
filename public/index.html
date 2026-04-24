@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vanilla Operações</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+
+body{
+  min-height:100vh;
+  color:white;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255,0,183,.24), transparent 25%),
+    radial-gradient(circle at 80% 80%, rgba(255,77,225,.16), transparent 30%),
+    linear-gradient(rgba(0,0,0,.82),rgba(0,0,0,.94)),
+    url("./background.jpg") center/cover fixed no-repeat;
+  padding:24px;
+}
+
+.hidden{display:none!important}
+
+.header,.card,.history{
+  background:rgba(15,15,25,.88);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  padding:20px;
+  margin-bottom:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 28px rgba(255,0,183,.12);
+  backdrop-filter:blur(10px);
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:20px;
+}
+
+.header img{
+  width:260px;
+  max-width:90vw;
+  filter:drop-shadow(0 0 18px rgba(255,200,0,.35));
+}
+
+h1{color:#ff4de1;font-size:38px;margin-bottom:8px;text-shadow:0 0 18px rgba(255,77,225,.3)}
+h2{color:#ff4de1;margin-bottom:12px}
+p{color:#ddd}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(320px,1fr));
+  gap:18px;
+}
+
+input,select,textarea{
+  width:100%;
+  padding:13px;
+  margin:7px 0 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.08);
+  color:white;
+  outline:none;
+}
+
+select option{background:#151520;color:white}
+
+input:focus,select:focus,textarea:focus{
+  border-color:#ff4de1;
+  box-shadow:0 0 0 3px rgba(255,77,225,.12);
+}
+
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  color:white;
+  font-weight:bold;
+  background:linear-gradient(90deg,#ff00b7,#ff4de1);
+  margin:4px 6px 4px 0;
+  transition:.2s;
+}
+
+button:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.btn2{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14)}
+.btn-danger{background:linear-gradient(90deg,#d7263d,#ff5e7a)}
+
+.result{
+  background:rgba(0,0,0,.38);
+  border-left:4px solid #ff4de1;
+  padding:14px;
+  border-radius:14px;
+  margin-top:12px;
+  white-space:pre-line;
+  line-height:1.7;
+}
+
+.history-item{
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.1);
+  padding:14px;
+  border-radius:16px;
+  margin-bottom:12px;
+  line-height:1.6;
+}
+
+.history-item small{color:#bbb}
+
+.history-item img{
+  width:260px!important;
+  max-width:100%!important;
+  max-height:180px!important;
+  object-fit:cover!important;
+  border-radius:14px!important;
+  margin-top:12px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  display:block;
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.78);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  padding:20px;
+  backdrop-filter:blur(8px);
+}
+
+.modal-box{
+  width:100%;
+  max-width:520px;
+  background:rgba(18,18,28,.98);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  padding:24px;
+  box-shadow:0 0 40px rgba(255,0,183,.2);
+}
+
+.actions{margin-bottom:18px}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+  h1{font-size:30px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div>
+    <img src="./logo.png" alt="Vanilla">
+    <h1>Vanilla Operações</h1>
+    <p id="userInfo">Faça login para continuar.</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn2" onclick="location.href='/admin.html'">👑 Admin</button>
+  </div>
+</div>
+
+<section id="auth">
+  <div class="grid">
+    <div class="card">
+      <h2>🔐 Login</h2>
+      <input id="loginUser" placeholder="Usuário">
+      <input id="loginPass" type="password" placeholder="Senha">
+      <button onclick="login()">Entrar</button>
+      <div id="loginMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Cadastro</h2>
+      <input id="cadUser" placeholder="Usuário">
+      <input id="cadPass" type="password" placeholder="Senha">
+      <button onclick="cadastrar()">Cadastrar</button>
+      <div id="cadMsg"></div>
+    </div>
+  </div>
+</section>
+
+<section id="app" class="hidden">
+  <div class="actions">
+    <button class="btn2" onclick="logout()">🚪 Sair</button>
+    <button class="btn2" onclick="carregarHistorico()">🔄 Atualizar histórico</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🛒 Venda</h2>
+
+      <select id="item">
+        <option value="capuz">Capuz</option>
+        <option value="colete">Colete</option>
+        <option value="energetico">Energético</option>
+        <option value="lockpick">Lockpick</option>
+        <option value="pendrive">Pendrive</option>
+        <option value="tickets">Tickets</option>
+      </select>
+
+      <select id="tipoVenda">
+        <option value="com">Com parceria</option>
+        <option value="sem">Sem parceria</option>
+      </select>
+
+      <input id="qtd" type="number" value="1" min="1">
+
+      <button onclick="calcVenda()">Calcular venda</button>
+      <div id="resVenda" class="result">Aguardando cálculo.</div>
+    </div>
+
+    <div class="card">
+      <h2>🧼 Lavagem</h2>
+      <input id="valorLavagem" type="number" placeholder="Valor">
+      <input id="taxaLavagem" type="number" value="20" placeholder="Taxa %">
+      <button onclick="calcLavagem()">Calcular lavagem</button>
+      <div id="resLavagem" class="result">Aguardando cálculo.</div>
+    </div>
+
+    <div class="card">
+      <h2>🔧 Desmanche</h2>
+      <input id="valorDesmanche" type="number" placeholder="Valor">
+      <input id="taxaDesmanche" type="number" value="20" placeholder="Taxa %">
+      <button onclick="calcDesmanche()">Calcular desmanche</button>
+      <div id="resDesmanche" class="result">Aguardando cálculo.</div>
+    </div>
+
+    <div class="card">
+      <h2>🌾 Farm</h2>
+      <input id="nome" placeholder="Nome">
+      <textarea id="obsFarm" rows="4" placeholder="Observação"></textarea>
+      <input id="img" type="file" accept="image/*">
+      <button onclick="farm()">Registrar farm</button>
+      <div id="resFarm" class="result">Aguardando farm.</div>
+    </div>
+  </div>
+
+  <div class="history">
+    <h2>🧾 Meu Histórico</h2>
+    <div id="historyList"></div>
+  </div>
+</section>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <h2>✅ Confirmar registro</h2>
+    <div id="modalText" class="result"></div>
+    <button onclick="confirmar()">Confirmar</button>
+    <button class="btn2" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+const tabelaVenda = {
+  capuz:{com:12150,sem:13500},
+  colete:{com:14580,sem:16200},
+  energetico:{com:1800,sem:2000},
+  lockpick:{com:12150,sem:13500},
+  pendrive:{com:16200,sem:18000},
+  tickets:{com:6480,sem:7200}
+};
+
+const nomes = {
+  capuz:"Capuz",
+  colete:"Colete",
+  energetico:"Energético",
+  lockpick:"Lockpick",
+  pendrive:"Pendrive",
+  tickets:"Tickets"
+};
+
+let acaoPendente = null;
+
+function moeda(v){
+  return "R$ " + Number(v || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function abrirModal(texto, cb){
+  document.getElementById("modalText").innerText = texto;
+  document.getElementById("modal").classList.remove("hidden");
+  acaoPendente = cb;
+}
+
+function fecharModal(){
+  document.getElementById("modal").classList.add("hidden");
+  acaoPendente = null;
+}
+
+async function confirmar(){
+  if(acaoPendente) await acaoPendente();
+  fecharModal();
+}
+
+async function cadastrar(){
+  const username = document.getElementById("cadUser").value.trim();
+  const password = document.getElementById("cadPass").value.trim();
+
+  const res = await fetch("/api/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
+
+  const data = await res.json();
+  document.getElementById("cadMsg").innerText = data.error || "Cadastro realizado!";
+}
+
+async function login(){
+  const username = document.getElementById("loginUser").value.trim();
+  const password = document.getElementById("loginPass").value.trim();
+
+  const res = await fetch("/api/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
+
+  const data = await res.json();
+
+  if(data.error){
+    document.getElementById("loginMsg").innerText = data.error;
+    return;
+  }
+
+  await verificarLogin();
+}
+
+async function logout(){
+  await fetch("/api/logout");
+  await verificarLogin();
+}
+
+async function verificarLogin(){
+  const res = await fetch("/api/me");
+  const user = await res.json();
+
+  if(user){
+    document.getElementById("auth").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("userInfo").innerText = "Bem-vindo, " + user.username;
+    carregarHistorico();
+  }else{
+    document.getElementById("auth").classList.remove("hidden");
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("userInfo").innerText = "Faça login para continuar.";
+  }
+}
+
+async function salvar(tipo, conteudo){
+  const res = await fetch("/api/log",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({tipo,conteudo})
+  });
+
+  const data = await res.json();
+
+  if(data.error){
+    alert(data.error);
+    return;
+  }
+
+  await carregarHistorico();
+  alert("Registro salvo!");
+}
+
+function calcVenda(){
+  const item = document.getElementById("item").value;
+  const tipo = document.getElementById("tipoVenda").value;
+  const qtd = Number(document.getElementById("qtd").value);
+
+  if(!qtd || qtd < 1){
+    alert("Informe uma quantidade válida.");
+    return;
+  }
+
+  const preco = tabelaVenda[item][tipo];
+  const total = preco * qtd;
+  const operador = total * 0.30;
+  const farc = total * 0.70;
+
+  const texto =
+`📦 Item: ${nomes[item]}
+🤝 Tipo: ${tipo === "com" ? "Com parceria" : "Sem parceria"}
+💰 Unitário: ${moeda(preco)}
+📊 Quantidade: ${qtd}
+💰 Total: ${moeda(total)}
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
+
+  document.getElementById("resVenda").innerText = texto;
+  abrirModal(texto,()=>salvar("Venda",texto));
+}
+
+function calcLavagem(){
+  const valor = Number(document.getElementById("valorLavagem").value);
+  const taxa = Number(document.getElementById("taxaLavagem").value);
+
+  if(!valor || !taxa){
+    alert("Preencha valor e taxa.");
+    return;
+  }
+
+  const taxaTotal = valor * taxa / 100;
+  const cliente = valor - taxaTotal;
+  const operador = taxaTotal * 0.30;
+  const farc = taxaTotal * 0.70;
+
+  const texto =
+`💰 Valor inicial: ${moeda(valor)}
+📤 Cliente recebe: ${moeda(cliente)}
+💵 Taxa total: ${moeda(taxaTotal)}
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
+
+  document.getElementById("resLavagem").innerText = texto;
+  abrirModal(texto,()=>salvar("Lavagem",texto));
+}
+
+function calcDesmanche(){
+  const valor = Number(document.getElementById("valorDesmanche").value);
+  const taxa = Number(document.getElementById("taxaDesmanche").value);
+
+  if(!valor || !taxa){
+    alert("Preencha valor e taxa.");
+    return;
+  }
+
+  const taxaTotal = valor * taxa / 100;
+  const cliente = valor - taxaTotal;
+  const operador = taxaTotal * 0.30;
+  const farc = taxaTotal * 0.70;
+
+  const texto =
+`💰 Valor inicial: ${moeda(valor)}
+📤 Cliente recebe: ${moeda(cliente)}
+💵 Taxa total: ${moeda(taxaTotal)}
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
+
+  document.getElementById("resDesmanche").innerText = texto;
+  abrirModal(texto,()=>salvar("Desmanche",texto));
+}
+
+async function farm(){
+  const nomeFarm = document.getElementById("nome").value.trim();
+  const obs = document.getElementById("obsFarm").value.trim() || "Sem observação";
+  const file = document.getElementById("img").files[0];
+
+  if(!nomeFarm || !file){
+    alert("Preencha nome e imagem.");
+    return;
+  }
+
+  const texto =
+`🎮 Nome: ${nomeFarm}
+📝 Observação: ${obs}
+📅 Data: ${new Date().toLocaleString("pt-BR")}`;
+
+  const form = new FormData();
+  form.append("conteudo",texto);
+  form.append("imagem",file);
+
+  const res = await fetch("/api/farm",{
+    method:"POST",
+    body:form
+  });
+
+  const data = await res.json();
+
+  if(data.error){
+    alert(data.error);
+    return;
+  }
+
+  document.getElementById("resFarm").innerText = texto;
+  await carregarHistorico();
+  alert("Farm salvo!");
+}
+
+async function carregarHistorico(){
+  const res = await fetch("/api/historico");
+  const data = await res.json();
+
+  const box = document.getElementById("historyList");
+
+  if(!Array.isArray(data) || data.length === 0){
+    box.innerHTML = "<p>Sem registros.</p>";
+    return;
+  }
+
+  box.innerHTML = data.map(item=>`
+    <div class="history-item">
+      <b>${item.tipo}</b><br>
+      <small>${item.data}</small><br>
+      ${String(item.conteudo || "").replace(/\n/g,"<br>")}
+      ${item.imagem ? `<br><img src="/uploads/${item.imagem}">` : ""}
+    </div>
+  `).join("");
+}
+
+verificarLogin();
+</script>
+
+</body>
+</html>
