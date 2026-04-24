@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vanilla Operações</title>
 
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ff00b7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vanilla">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/logo.png">
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
 
@@ -87,7 +95,6 @@ button{
 
 button:hover{transform:translateY(-1px);filter:brightness(1.08)}
 .btn2{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14)}
-.btn-danger{background:linear-gradient(90deg,#d7263d,#ff5e7a)}
 
 .result{
   background:rgba(0,0,0,.38);
@@ -510,6 +517,14 @@ async function carregarHistorico(){
 }
 
 verificarLogin();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .then(() => console.log("✅ PWA ativado"))
+      .catch(err => console.log("❌ Erro PWA:", err));
+  });
+}
 </script>
 
 </body>

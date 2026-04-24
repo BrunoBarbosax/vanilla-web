@@ -1,0 +1,23 @@
+{
+  "name": "Vanilla Operações",
+  "short_name": "Vanilla",
+  "description": "Sistema completo de operações Vanilla",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f15",
+  "theme_color": "#ff00b7",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
