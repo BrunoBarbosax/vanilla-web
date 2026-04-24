@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const multer = require('multer');
@@ -14,57 +14,16 @@ const PORT = process.env.PORT || 3000;
 const uploadsDir = path.join(__dirname, 'uploads');
 const publicDir = path.join(__dirname, 'public');
 
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-const db = new sqlite3.Database('./database.db');
-
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      is_admin INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      tipo TEXT NOT NULL,
-      conteudo TEXT NOT NULL,
-      imagem TEXT,
-      data DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    )
-  `);
-});
-
-async function criarAdmin() {
-  const adminUser = process.env.ADMIN_USER || 'admin';
-  const adminPass = process.env.ADMIN_PASSWORD || '123456';
-
-  db.get('SELECT * FROM users WHERE username = ?', [adminUser], async (err, row) => {
-    if (err) return console.log(err);
-
-    if (!row) {
-      const hash = await bcrypt.hash(adminPass, 10);
-
-      db.run(
-        'INSERT INTO users (username, password, is_admin) VALUES (?, ?, 1)',
-        [adminUser, hash],
-        (err) => {
-          if (err) console.log(err);
-          else console.log('✅ Admin criado:', adminUser);
-        }
-      );
-    }
-  });
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-criarAdmin();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -72,7 +31,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'segredo-vanilla',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7
+  }
 }));
 
 app.use('/uploads', express.static(uploadsDir));
@@ -87,6 +49,50 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+async function initDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      is_admin BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      tipo TEXT NOT NULL,
+      conteudo TEXT NOT NULL,
+      imagem TEXT,
+      data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  const adminUser = process.env.ADMIN_USER || 'admin';
+  const adminPass = process.env.ADMIN_PASSWORD || '123456';
+
+  const adminExists = await pool.query(
+    'SELECT id FROM users WHERE username = $1',
+    [adminUser]
+  );
+
+  if (adminExists.rows.length === 0) {
+    const hash = await bcrypt.hash(adminPass, 10);
+
+    await pool.query(
+      'INSERT INTO users (username, password, is_admin) VALUES ($1, $2, true)',
+      [adminUser, hash]
+    );
+
+    console.log('✅ Admin criado:', adminUser);
+  }
+
+  console.log('✅ Banco Supabase conectado e tabelas prontas.');
+}
 
 function auth(req, res, next) {
   if (!req.session.user) {
@@ -109,38 +115,45 @@ function adminAuth(req, res, next) {
 }
 
 app.post('/api/register', async (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '').trim();
+  try {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '').trim();
 
-  if (!username || !password) {
-    return res.json({ error: 'Preencha usuário e senha.' });
-  }
-
-  const hash = await bcrypt.hash(password, 10);
-
-  db.run(
-    'INSERT INTO users (username, password, is_admin) VALUES (?, ?, 0)',
-    [username, hash],
-    function(err) {
-      if (err) {
-        return res.json({ error: 'Usuário já existe.' });
-      }
-
-      res.json({ success: true });
+    if (!username || !password) {
+      return res.json({ error: 'Preencha usuário e senha.' });
     }
-  );
+
+    const hash = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      'INSERT INTO users (username, password, is_admin) VALUES ($1, $2, false)',
+      [username, hash]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: 'Usuário já existe ou erro ao cadastrar.' });
+  }
 });
 
-app.post('/api/login', (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '').trim();
+app.post('/api/login', async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '').trim();
 
-  if (!username || !password) {
-    return res.json({ error: 'Preencha usuário e senha.' });
-  }
+    if (!username || !password) {
+      return res.json({ error: 'Preencha usuário e senha.' });
+    }
 
-  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
-    if (err || !user) {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
       return res.json({ error: 'Usuário ou senha inválidos.' });
     }
 
@@ -153,11 +166,14 @@ app.post('/api/login', (req, res) => {
     req.session.user = {
       id: user.id,
       username: user.username,
-      is_admin: user.is_admin === 1
+      is_admin: user.is_admin
     };
 
     res.json({ success: true, user: req.session.user });
-  });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: 'Erro ao fazer login.' });
+  }
 });
 
 app.get('/api/me', (req, res) => {
@@ -176,72 +192,99 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-app.post('/api/log', auth, (req, res) => {
-  const tipo = String(req.body.tipo || '').trim();
-  const conteudo = String(req.body.conteudo || '').trim();
+app.post('/api/log', auth, async (req, res) => {
+  try {
+    const tipo = String(req.body.tipo || '').trim();
+    const conteudo = String(req.body.conteudo || '').trim();
 
-  if (!tipo || !conteudo) {
-    return res.json({ error: 'Dados inválidos.' });
+    if (!tipo || !conteudo) {
+      return res.json({ error: 'Dados inválidos.' });
+    }
+
+    await pool.query(
+      'INSERT INTO logs (user_id, tipo, conteudo) VALUES ($1, $2, $3)',
+      [req.session.user.id, tipo, conteudo]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: 'Erro ao salvar registro.' });
   }
-
-  db.run(
-    'INSERT INTO logs (user_id, tipo, conteudo) VALUES (?, ?, ?)',
-    [req.session.user.id, tipo, conteudo],
-    function(err) {
-      if (err) return res.json({ error: 'Erro ao salvar registro.' });
-      res.json({ success: true });
-    }
-  );
 });
 
-app.post('/api/farm', auth, upload.single('imagem'), (req, res) => {
-  const conteudo = String(req.body.conteudo || '').trim();
-  const imagem = req.file ? req.file.filename : null;
+app.post('/api/farm', auth, upload.single('imagem'), async (req, res) => {
+  try {
+    const conteudo = String(req.body.conteudo || '').trim();
+    const imagem = req.file ? req.file.filename : null;
 
-  if (!conteudo) {
-    return res.json({ error: 'Dados inválidos.' });
+    if (!conteudo) {
+      return res.json({ error: 'Dados inválidos.' });
+    }
+
+    await pool.query(
+      'INSERT INTO logs (user_id, tipo, conteudo, imagem) VALUES ($1, $2, $3, $4)',
+      [req.session.user.id, 'Farm', conteudo, imagem]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: 'Erro ao salvar farm.' });
   }
-
-  db.run(
-    'INSERT INTO logs (user_id, tipo, conteudo, imagem) VALUES (?, ?, ?, ?)',
-    [req.session.user.id, 'Farm', conteudo, imagem],
-    function(err) {
-      if (err) return res.json({ error: 'Erro ao salvar farm.' });
-      res.json({ success: true });
-    }
-  );
 });
 
-app.get('/api/historico', auth, (req, res) => {
-  db.all(
-    'SELECT * FROM logs WHERE user_id = ? ORDER BY id DESC',
-    [req.session.user.id],
-    (err, rows) => {
-      if (err) return res.json([]);
-      res.json(rows);
-    }
-  );
+app.get('/api/historico', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM logs WHERE user_id = $1 ORDER BY id DESC',
+      [req.session.user.id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
 });
 
-app.get('/api/admin/logs', adminAuth, (req, res) => {
-  db.all(`
-    SELECT logs.*, users.username
-    FROM logs
-    JOIN users ON logs.user_id = users.id
-    ORDER BY logs.id DESC
-  `, [], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows);
+app.get('/api/admin/logs', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT logs.*, users.username
+      FROM logs
+      JOIN users ON logs.user_id = users.id
+      ORDER BY logs.id DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+app.get('/api/admin/users', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, username, is_admin, created_at
+      FROM users
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+initDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🔥 Servidor rodando em http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Erro ao iniciar banco:', err);
   });
-});
-
-app.get('/api/admin/users', adminAuth, (req, res) => {
-  db.all('SELECT id, username, is_admin, created_at FROM users ORDER BY id DESC', [], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows);
-  });
-});
-
-app.listen(PORT, () => {
-  console.log(`🔥 Servidor rodando em http://localhost:${PORT}`);
-});
