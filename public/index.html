@@ -152,6 +152,36 @@ button:hover{transform:translateY(-1px);filter:brightness(1.08)}
 
 .actions{margin-bottom:18px}
 
+.suggestions{
+  display:none;
+  background:rgba(10,10,18,.96);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  margin-top:-6px;
+  margin-bottom:12px;
+  overflow:hidden;
+}
+
+.suggestion-item{
+  padding:12px 14px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.suggestion-item:hover{
+  background:rgba(255,0,183,.18);
+}
+
+.badge-ok{
+  color:#55efc4;
+  font-weight:bold;
+}
+
+.badge-no{
+  color:#ff5e7a;
+  font-weight:bold;
+}
+
 @media(max-width:900px){
   .grid{grid-template-columns:1fr}
   h1{font-size:30px}
@@ -247,6 +277,14 @@ button:hover{transform:translateY(-1px);filter:brightness(1.08)}
       <button onclick="farm()">Registrar farm</button>
       <div id="resFarm" class="result">Aguardando farm.</div>
     </div>
+
+    <div class="card">
+      <h2>🤝 Consulta de Parceria</h2>
+      <input id="consultaFarc" placeholder="Digite o nome da FARC" oninput="mostrarSugestoes()" autocomplete="off">
+      <div id="sugestoesFarc" class="suggestions"></div>
+      <button onclick="consultarParceria()">Consultar</button>
+      <div id="resParceria" class="result">Digite o nome da FARC para consultar.</div>
+    </div>
   </div>
 
   <div class="history">
@@ -283,6 +321,19 @@ const nomes = {
   tickets:"Tickets"
 };
 
+const farcsParceiras = {
+  "golpista": { nome:"Golpista", area:"Área de Risco 12", produtos:"Munição + LSD" },
+  "holanda": { nome:"Holanda", area:"Área de Risco 1", produtos:"Munição + Coca" },
+  "tubaroes": { nome:"Tubarões", area:"Área de Risco 5", produtos:"Armas + Coca", contato:"437 -352" },
+  "angels": { nome:"Angels", area:"Área de Risco 7", produtos:"Armas + Metafetamina" },
+  "croacia": { nome:"Croácia", area:"Área de Risco 4", produtos:"Armas + Maconha" },
+  "egito": { nome:"Egito", area:"Área de Risco 2", produtos:"Arma + LSD" },
+  "realpsico": { nome:"Realpsico", area:"Área de Risco 11", produtos:"Armas + Maconha" },
+  "tokyo": { nome:"Tokyo", area:"Área de Risco 16", produtos:"Armas + LSD" },
+  "canada": { nome:"Canadá", area:"Área de Risco 15", produtos:"Armas" },
+  "bombeiro": { nome:"Bombeiro", area:"Bombeiros", produtos:"Adrenalina" }
+};
+
 let acaoPendente = null;
 
 function moeda(v){
@@ -290,6 +341,79 @@ function moeda(v){
     minimumFractionDigits:2,
     maximumFractionDigits:2
   });
+}
+
+function normalizar(txt){
+  return String(txt || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .trim();
+}
+
+function mostrarSugestoes(){
+  const input = document.getElementById("consultaFarc").value;
+  const busca = normalizar(input);
+  const box = document.getElementById("sugestoesFarc");
+
+  if(!busca){
+    box.style.display = "none";
+    box.innerHTML = "";
+    return;
+  }
+
+  const lista = Object.values(farcsParceiras).filter(f =>
+    normalizar(f.nome).includes(busca)
+  );
+
+  if(!lista.length){
+    box.style.display = "none";
+    box.innerHTML = "";
+    return;
+  }
+
+  box.innerHTML = lista.map(f => `
+    <div class="suggestion-item" onclick="selecionarFarc('${f.nome}')">
+      🤝 ${f.nome} — ${f.area}
+    </div>
+  `).join("");
+
+  box.style.display = "block";
+}
+
+function selecionarFarc(nome){
+  document.getElementById("consultaFarc").value = nome;
+  document.getElementById("sugestoesFarc").style.display = "none";
+  consultarParceria();
+}
+
+function consultarParceria(){
+  const input = document.getElementById("consultaFarc").value;
+  const busca = normalizar(input);
+  const dados = farcsParceiras[busca];
+
+  if(!busca){
+    document.getElementById("resParceria").innerText = "Digite o nome da FARC.";
+    return;
+  }
+
+  if(!dados){
+    document.getElementById("resParceria").innerHTML =
+`<span class="badge-no">❌ FARC NÃO PARCEIRA</span>
+
+Nome consultado: ${input}
+
+Status: Não cadastrada como parceira.`;
+    return;
+  }
+
+  document.getElementById("resParceria").innerHTML =
+`<span class="badge-ok">✅ FARC PARCEIRA</span>
+
+🏷️ Nome: ${dados.nome}
+📍 Local: ${dados.area}
+📦 Produtos: ${dados.produtos}
+${dados.contato ? `📞 Contato: ${dados.contato}` : ""}`;
 }
 
 function abrirModal(texto, cb){
