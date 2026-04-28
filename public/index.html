@@ -365,6 +365,89 @@ button:active{
   padding:10px 12px;
 }
 
+
+/* ===== MENU DE PÁGINAS ===== */
+.nav-pages{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:0 0 18px;
+}
+
+.nav-pages button{
+  margin:0;
+}
+
+.nav-pages button.active{
+  background:linear-gradient(90deg,#ffd166,#ff4de1);
+  color:#160913;
+  box-shadow:0 12px 32px rgba(255,209,102,.22);
+}
+
+.page-panel{
+  display:none;
+}
+
+.page-panel.active{
+  display:block;
+}
+
+/* ===== PLANEJAMENTO DE AÇÃO ===== */
+.action-members{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.member-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:999px;
+  padding:8px 11px;
+  margin:4px;
+  color:white;
+}
+
+.member-chip button{
+  padding:2px 7px;
+  border-radius:999px;
+  margin:0;
+  background:rgba(255,94,122,.8);
+  box-shadow:none;
+}
+
+.checklist{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(150px,1fr));
+  gap:10px;
+  margin:10px 0 14px;
+}
+
+.check-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  border-radius:14px;
+}
+
+.check-item input{
+  width:auto;
+  margin:0;
+  accent-color:#ff4de1;
+}
+
+#acaoResumo{
+  min-height:180px;
+  font-family:Consolas, monospace;
+}
+
 @media(max-width:900px){
   body{padding:16px}
   .grid{grid-template-columns:1fr}
@@ -374,6 +457,7 @@ button:active{
 
 @media(max-width:700px){
   .bind-buttons{grid-template-columns:1fr 1fr}
+  .checklist{grid-template-columns:1fr}
   button{width:100%;margin:5px 0}
 }
 </style>
@@ -419,104 +503,213 @@ button:active{
     <button class="btn2" onclick="carregarHistorico()">🔄 Atualizar histórico</button>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>🛒 Venda</h2>
+  <div class="nav-pages">
+    <button type="button" class="active" onclick="abrirPaginaPainel('operacoes', this)">💰 Operações</button>
+    <button type="button" onclick="abrirPaginaPainel('farmPage', this)">🌾 Farm</button>
+    <button type="button" onclick="abrirPaginaPainel('bindsPage', this)">🔥 Binds</button>
+    <button type="button" onclick="abrirPaginaPainel('acoesPage', this)">📌 Ações</button>
+  </div>
 
-      <select id="item">
-        <option value="capuz">Capuz</option>
-        <option value="colete">Colete</option>
-        <option value="energetico">Energético</option>
-        <option value="lockpick">Lockpick</option>
-        <option value="pendrive">Pendrive</option>
-        <option value="tickets">Tickets</option>
-      </select>
+  <!-- PÁGINA OPERAÇÕES -->
+  <div id="operacoes" class="page-panel active">
+    <div class="grid">
+      <div class="card">
+        <h2>🛒 Venda</h2>
 
-      <select id="tipoVenda">
-        <option value="com">Com parceria</option>
-        <option value="sem">Sem parceria</option>
-      </select>
+        <select id="item">
+          <option value="capuz">Capuz</option>
+          <option value="colete">Colete</option>
+          <option value="energetico">Energético</option>
+          <option value="lockpick">Lockpick</option>
+          <option value="pendrive">Pendrive</option>
+          <option value="tickets">Tickets</option>
+        </select>
 
-      <input id="qtd" type="number" value="1" min="1">
+        <select id="tipoVenda">
+          <option value="com">Com parceria</option>
+          <option value="sem">Sem parceria</option>
+        </select>
 
-      <button onclick="calcVenda()">Calcular venda</button>
-      <div id="resVenda" class="result">Aguardando cálculo.</div>
-    </div>
+        <input id="qtd" type="number" value="1" min="1">
 
-    <div class="card">
-      <h2>🧼 Lavagem</h2>
-      <input id="valorLavagem" type="number" placeholder="Valor">
-      <input id="taxaLavagem" type="number" value="20" placeholder="Taxa %">
-      <button onclick="calcLavagem()">Calcular lavagem</button>
-      <div id="resLavagem" class="result">Aguardando cálculo.</div>
-    </div>
-
-    <div class="card">
-      <h2>🔧 Desmanche</h2>
-      <input id="valorDesmanche" type="number" placeholder="Valor">
-      <input id="taxaDesmanche" type="number" value="20" placeholder="Taxa %">
-      <button onclick="calcDesmanche()">Calcular desmanche</button>
-      <div id="resDesmanche" class="result">Aguardando cálculo.</div>
-    </div>
-
-    <div class="card">
-      <h2>🌾 Farm</h2>
-      <input id="nome" placeholder="Nome">
-      <textarea id="obsFarm" rows="4" placeholder="Observação"></textarea>
-      <input id="img" type="file" accept="image/*">
-      <button onclick="farm()">Registrar farm</button>
-      <div id="resFarm" class="result">Aguardando farm.</div>
-    </div>
-
-    <div class="card">
-      <h2>🤝 Consulta de Parceria</h2>
-      <input id="consultaFarc" placeholder="Digite o nome da FARC" oninput="mostrarSugestoes()" autocomplete="off">
-      <div id="sugestoesFarc" class="suggestions"></div>
-      <button onclick="consultarParceria()">Consultar</button>
-      <div id="resParceria" class="result">Digite o nome da FARC para consultar.</div>
-    </div>
-
-    <div class="card">
-      <h2>🔥 Gerador de Binds FiveM</h2>
-
-      <input id="bindTecla" placeholder="Tecla. Ex: n, O, F3, K">
-      <textarea id="bindFrase" rows="4" placeholder="Digite a frase da bind. Ex: ❤ FAZ CHUVINHA AMOR | 2717 MARY❤"></textarea>
-
-      <select id="bindCor">
-        <option value="~w~">⚪ Branco</option>
-        <option value="~r~">🔴 Vermelho</option>
-        <option value="~y~">🟡 Amarelo</option>
-        <option value="~g~">🟢 Verde</option>
-        <option value="~b~">🔵 Azul</option>
-        <option value="~q~">🩷 Rosa</option>
-        <option value="~p~">🟣 Roxo</option>
-        <option value="~v~">⚫ Preto</option>
-      </select>
-
-      <input id="bindFontSize" type="number" value="100" min="10" max="500" placeholder="Tamanho. Ex: 70, 100, 150">
-
-      <select id="bindModo">
-        <option value="grande">Grande com font size</option>
-        <option value="normal">Normal sem font size</option>
-        <option value="multicolor">Multicolor com font size</option>
-      </select>
-
-      <div class="help">
-        Formato funcional: bind keyboard "n" "me ~w~ &lt;font size='100'&gt;❤ FAZ CHUVINHA AMOR | 2717 MARY❤"
+        <button onclick="calcVenda()">Calcular venda</button>
+        <div id="resVenda" class="result">Aguardando cálculo.</div>
       </div>
 
-      <div class="bind-buttons">
-        <button type="button" onclick="modeloChuvinha()">❤ Chuvinha</button>
-        <button type="button" onclick="modeloAcao()">💥 Ação</button>
-        <button type="button" onclick="modeloVenda()">💰 Venda</button>
-        <button type="button" onclick="limparBind()">🧹 Limpar</button>
+      <div class="card">
+        <h2>🧼 Lavagem</h2>
+        <input id="valorLavagem" type="number" placeholder="Valor">
+        <input id="taxaLavagem" type="number" value="20" placeholder="Taxa %">
+        <button onclick="calcLavagem()">Calcular lavagem</button>
+        <div id="resLavagem" class="result">Aguardando cálculo.</div>
       </div>
 
-      <button type="button" onclick="gerarBind()">Gerar bind</button>
-      <button type="button" class="btn2" onclick="copiarBind()">Copiar bind</button>
+      <div class="card">
+        <h2>🔧 Desmanche</h2>
+        <input id="valorDesmanche" type="number" placeholder="Valor">
+        <input id="taxaDesmanche" type="number" value="20" placeholder="Taxa %">
+        <button onclick="calcDesmanche()">Calcular desmanche</button>
+        <div id="resDesmanche" class="result">Aguardando cálculo.</div>
+      </div>
 
-      <div id="bindPreview" class="bind-preview">Preview aqui</div>
-      <textarea id="bindResultado" readonly placeholder="A bind pronta vai aparecer aqui..."></textarea>
+      <div class="card">
+        <h2>🤝 Consulta de Parceria</h2>
+        <input id="consultaFarc" placeholder="Digite o nome da FARC" oninput="mostrarSugestoes()" autocomplete="off">
+        <div id="sugestoesFarc" class="suggestions"></div>
+        <button onclick="consultarParceria()">Consultar</button>
+        <div id="resParceria" class="result">Digite o nome da FARC para consultar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÁGINA FARM -->
+  <div id="farmPage" class="page-panel">
+    <div class="grid">
+      <div class="card">
+        <h2>🌾 Registrar Farm</h2>
+        <input id="nome" placeholder="Nome">
+        <textarea id="obsFarm" rows="4" placeholder="Observação"></textarea>
+        <input id="img" type="file" accept="image/*">
+        <button onclick="farm()">Registrar farm</button>
+        <div id="resFarm" class="result">Aguardando farm.</div>
+      </div>
+
+      <div class="card">
+        <h2>📌 Regras rápidas de farm</h2>
+        <div class="result">
+✅ Tire print claro do farm.
+✅ Coloque o nome correto.
+✅ Use observação quando necessário.
+✅ Atualize o histórico após registrar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÁGINA BINDS -->
+  <div id="bindsPage" class="page-panel">
+    <div class="grid">
+      <div class="card">
+        <h2>🔥 Gerador de Binds FiveM</h2>
+
+        <input id="bindTecla" placeholder="Tecla. Ex: n, O, F3, K">
+        <textarea id="bindFrase" rows="4" placeholder="Digite a frase da bind. Ex: ❤ FAZ CHUVINHA AMOR | 2717 MARY❤"></textarea>
+
+        <select id="bindCor">
+          <option value="~w~">⚪ Branco</option>
+          <option value="~r~">🔴 Vermelho</option>
+          <option value="~y~">🟡 Amarelo</option>
+          <option value="~g~">🟢 Verde</option>
+          <option value="~b~">🔵 Azul</option>
+          <option value="~q~">🩷 Rosa</option>
+          <option value="~p~">🟣 Roxo</option>
+          <option value="~v~">⚫ Preto</option>
+        </select>
+
+        <input id="bindFontSize" type="number" value="100" min="10" max="500" placeholder="Tamanho. Ex: 70, 100, 150">
+
+        <select id="bindModo">
+          <option value="grande">Grande com font size</option>
+          <option value="normal">Normal sem font size</option>
+          <option value="multicolor">Multicolor com font size</option>
+        </select>
+
+        <div class="help">
+          Formato funcional: bind keyboard "n" "me ~w~ &lt;font size='100'&gt;❤ FAZ CHUVINHA AMOR | 2717 MARY❤"
+        </div>
+
+        <div class="bind-buttons">
+          <button type="button" onclick="modeloChuvinha()">❤ Chuvinha</button>
+          <button type="button" onclick="modeloAcao()">💥 Ação</button>
+          <button type="button" onclick="modeloVenda()">💰 Venda</button>
+          <button type="button" onclick="limparBind()">🧹 Limpar</button>
+        </div>
+
+        <button type="button" onclick="gerarBind()">Gerar bind</button>
+        <button type="button" class="btn2" onclick="copiarBind()">Copiar bind</button>
+
+        <div id="bindPreview" class="bind-preview">Preview aqui</div>
+        <textarea id="bindResultado" readonly placeholder="A bind pronta vai aparecer aqui..."></textarea>
+      </div>
+
+      <div class="card">
+        <h2>💡 Dicas de Bind</h2>
+        <div class="result">
+Exemplo que funciona:
+
+bind keyboard "n" "me ~w~ &lt;font size='100'&gt;❤ FAZ CHUVINHA AMOR | 2717 MARY❤"
+
+Cores:
+~w~ branco
+~r~ vermelho
+~y~ amarelo
+~g~ verde
+~b~ azul
+~q~ rosa
+~p~ roxo
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÁGINA AÇÕES -->
+  <div id="acoesPage" class="page-panel">
+    <div class="grid">
+      <div class="card">
+        <h2>📌 Planejamento de Ação</h2>
+
+        <input id="acaoNome" placeholder="Nome da ação. Ex: Banco Central, Loja, Rota">
+        <input id="acaoLocal" placeholder="Local da ação">
+        <input id="acaoHorario" placeholder="Horário. Ex: 22:30">
+        <input id="acaoResponsavel" placeholder="Responsável pela ação">
+
+        <select id="acaoStatus">
+          <option value="Planejada">Planejada</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Finalizada">Finalizada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+
+        <div class="action-members">
+          <input id="acaoMembro" placeholder="Nome do membro confirmado">
+          <button type="button" onclick="adicionarMembroAcao()">Adicionar membro</button>
+        </div>
+
+        <div id="listaMembrosAcao" class="result">Nenhum membro confirmado ainda.</div>
+
+        <h2 style="margin-top:16px;">✅ Checklist</h2>
+
+        <div class="checklist">
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Rádio"> Rádio</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Colete"> Colete</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Armamento"> Armamento</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Munição"> Munição</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Carros"> Carros</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Rota de fuga"> Rota de fuga</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Refém"> Refém</label>
+          <label class="check-item"><input type="checkbox" class="acaoCheck" value="Ponto de encontro"> Ponto de encontro</label>
+        </div>
+
+        <textarea id="acaoObs" rows="4" placeholder="Observações da ação"></textarea>
+
+        <button type="button" onclick="gerarResumoAcao()">Gerar resumo</button>
+        <button type="button" class="btn2" onclick="copiarResumoAcao()">Copiar resumo</button>
+        <button type="button" class="btn2" onclick="limparAcao()">Limpar ação</button>
+
+        <textarea id="acaoResumo" readonly placeholder="O resumo da ação vai aparecer aqui..."></textarea>
+      </div>
+
+      <div class="card">
+        <h2>🧠 Modelo de organização</h2>
+        <div class="result">
+📌 Use essa página antes de qualquer ação.
+
+✅ Coloque local, horário e responsável.
+✅ Adicione os membros confirmados.
+✅ Marque checklist de rádio, colete, fuga etc.
+✅ Gere o resumo e cole no Discord/WhatsApp.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -696,12 +889,252 @@ async function login(){
     return;
   }
 
-  await verificarLogin();
+  await 
+/* ===== PÁGINAS DO PAINEL ===== */
+function abrirPaginaPainel(id, botao){
+  document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
+  const pagina = document.getElementById(id);
+  if(pagina) pagina.classList.add("active");
+
+  document.querySelectorAll(".nav-pages button").forEach(b => b.classList.remove("active"));
+  if(botao) botao.classList.add("active");
+}
+
+/* ===== PLANEJAMENTO DE AÇÕES ===== */
+let membrosAcao = [];
+
+function atualizarListaMembrosAcao(){
+  const box = document.getElementById("listaMembrosAcao");
+
+  if(!membrosAcao.length){
+    box.innerHTML = "Nenhum membro confirmado ainda.";
+    return;
+  }
+
+  box.innerHTML = membrosAcao.map((membro, index) => `
+    <span class="member-chip">
+      ${membro}
+      <button type="button" onclick="removerMembroAcao(${index})">x</button>
+    </span>
+  `).join("");
+}
+
+function adicionarMembroAcao(){
+  const input = document.getElementById("acaoMembro");
+  const nome = input.value.trim();
+
+  if(!nome){
+    alert("Digite o nome do membro.");
+    return;
+  }
+
+  membrosAcao.push(nome);
+  input.value = "";
+  atualizarListaMembrosAcao();
+}
+
+function removerMembroAcao(index){
+  membrosAcao.splice(index, 1);
+  atualizarListaMembrosAcao();
+}
+
+function gerarResumoAcao(){
+  const nome = document.getElementById("acaoNome").value.trim() || "Ação Vanilla";
+  const local = document.getElementById("acaoLocal").value.trim() || "Não informado";
+  const horario = document.getElementById("acaoHorario").value.trim() || "Não informado";
+  const responsavel = document.getElementById("acaoResponsavel").value.trim() || "Não informado";
+  const status = document.getElementById("acaoStatus").value;
+  const obs = document.getElementById("acaoObs").value.trim() || "Sem observações";
+
+  const checks = Array.from(document.querySelectorAll(".acaoCheck")).map(chk => {
+    return `${chk.checked ? "✅" : "❌"} ${chk.value}`;
+  }).join("\n");
+
+  const membros = membrosAcao.length
+    ? membrosAcao.map(m => `- ${m}`).join("\n")
+    : "- Nenhum confirmado";
+
+  const resumo =
+`📌 AÇÃO VANILLA
+
+🎯 Nome: ${nome}
+📍 Local: ${local}
+⏰ Horário: ${horario}
+👑 Responsável: ${responsavel}
+📊 Status: ${status}
+
+✅ Confirmados:
+${membros}
+
+📋 Checklist:
+${checks}
+
+📝 Observações:
+${obs}`;
+
+  document.getElementById("acaoResumo").value = resumo;
+}
+
+function copiarResumoAcao(){
+  const el = document.getElementById("acaoResumo");
+
+  if(!el.value){
+    gerarResumoAcao();
+  }
+
+  el.focus();
+  el.select();
+  el.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(el.value)
+    .then(() => alert("Resumo da ação copiado!"))
+    .catch(() => {
+      document.execCommand("copy");
+      alert("Resumo da ação copiado!");
+    });
+}
+
+function limparAcao(){
+  document.getElementById("acaoNome").value = "";
+  document.getElementById("acaoLocal").value = "";
+  document.getElementById("acaoHorario").value = "";
+  document.getElementById("acaoResponsavel").value = "";
+  document.getElementById("acaoStatus").value = "Planejada";
+  document.getElementById("acaoMembro").value = "";
+  document.getElementById("acaoObs").value = "";
+  document.getElementById("acaoResumo").value = "";
+  document.querySelectorAll(".acaoCheck").forEach(chk => chk.checked = false);
+  membrosAcao = [];
+  atualizarListaMembrosAcao();
+}
+
+
+verificarLogin();
 }
 
 async function logout(){
   await fetch("/api/logout");
-  await verificarLogin();
+  await 
+/* ===== PÁGINAS DO PAINEL ===== */
+function abrirPaginaPainel(id, botao){
+  document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
+  const pagina = document.getElementById(id);
+  if(pagina) pagina.classList.add("active");
+
+  document.querySelectorAll(".nav-pages button").forEach(b => b.classList.remove("active"));
+  if(botao) botao.classList.add("active");
+}
+
+/* ===== PLANEJAMENTO DE AÇÕES ===== */
+let membrosAcao = [];
+
+function atualizarListaMembrosAcao(){
+  const box = document.getElementById("listaMembrosAcao");
+
+  if(!membrosAcao.length){
+    box.innerHTML = "Nenhum membro confirmado ainda.";
+    return;
+  }
+
+  box.innerHTML = membrosAcao.map((membro, index) => `
+    <span class="member-chip">
+      ${membro}
+      <button type="button" onclick="removerMembroAcao(${index})">x</button>
+    </span>
+  `).join("");
+}
+
+function adicionarMembroAcao(){
+  const input = document.getElementById("acaoMembro");
+  const nome = input.value.trim();
+
+  if(!nome){
+    alert("Digite o nome do membro.");
+    return;
+  }
+
+  membrosAcao.push(nome);
+  input.value = "";
+  atualizarListaMembrosAcao();
+}
+
+function removerMembroAcao(index){
+  membrosAcao.splice(index, 1);
+  atualizarListaMembrosAcao();
+}
+
+function gerarResumoAcao(){
+  const nome = document.getElementById("acaoNome").value.trim() || "Ação Vanilla";
+  const local = document.getElementById("acaoLocal").value.trim() || "Não informado";
+  const horario = document.getElementById("acaoHorario").value.trim() || "Não informado";
+  const responsavel = document.getElementById("acaoResponsavel").value.trim() || "Não informado";
+  const status = document.getElementById("acaoStatus").value;
+  const obs = document.getElementById("acaoObs").value.trim() || "Sem observações";
+
+  const checks = Array.from(document.querySelectorAll(".acaoCheck")).map(chk => {
+    return `${chk.checked ? "✅" : "❌"} ${chk.value}`;
+  }).join("\n");
+
+  const membros = membrosAcao.length
+    ? membrosAcao.map(m => `- ${m}`).join("\n")
+    : "- Nenhum confirmado";
+
+  const resumo =
+`📌 AÇÃO VANILLA
+
+🎯 Nome: ${nome}
+📍 Local: ${local}
+⏰ Horário: ${horario}
+👑 Responsável: ${responsavel}
+📊 Status: ${status}
+
+✅ Confirmados:
+${membros}
+
+📋 Checklist:
+${checks}
+
+📝 Observações:
+${obs}`;
+
+  document.getElementById("acaoResumo").value = resumo;
+}
+
+function copiarResumoAcao(){
+  const el = document.getElementById("acaoResumo");
+
+  if(!el.value){
+    gerarResumoAcao();
+  }
+
+  el.focus();
+  el.select();
+  el.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(el.value)
+    .then(() => alert("Resumo da ação copiado!"))
+    .catch(() => {
+      document.execCommand("copy");
+      alert("Resumo da ação copiado!");
+    });
+}
+
+function limparAcao(){
+  document.getElementById("acaoNome").value = "";
+  document.getElementById("acaoLocal").value = "";
+  document.getElementById("acaoHorario").value = "";
+  document.getElementById("acaoResponsavel").value = "";
+  document.getElementById("acaoStatus").value = "Planejada";
+  document.getElementById("acaoMembro").value = "";
+  document.getElementById("acaoObs").value = "";
+  document.getElementById("acaoResumo").value = "";
+  document.querySelectorAll(".acaoCheck").forEach(chk => chk.checked = false);
+  membrosAcao = [];
+  atualizarListaMembrosAcao();
+}
+
+
+verificarLogin();
 }
 
 async function verificarLogin(){
@@ -978,6 +1411,126 @@ function modeloVenda(){
   document.getElementById("bindModo").value = "multicolor";
   gerarBind();
 }
+
+
+/* ===== PÁGINAS DO PAINEL ===== */
+function abrirPaginaPainel(id, botao){
+  document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
+  const pagina = document.getElementById(id);
+  if(pagina) pagina.classList.add("active");
+
+  document.querySelectorAll(".nav-pages button").forEach(b => b.classList.remove("active"));
+  if(botao) botao.classList.add("active");
+}
+
+/* ===== PLANEJAMENTO DE AÇÕES ===== */
+let membrosAcao = [];
+
+function atualizarListaMembrosAcao(){
+  const box = document.getElementById("listaMembrosAcao");
+
+  if(!membrosAcao.length){
+    box.innerHTML = "Nenhum membro confirmado ainda.";
+    return;
+  }
+
+  box.innerHTML = membrosAcao.map((membro, index) => `
+    <span class="member-chip">
+      ${membro}
+      <button type="button" onclick="removerMembroAcao(${index})">x</button>
+    </span>
+  `).join("");
+}
+
+function adicionarMembroAcao(){
+  const input = document.getElementById("acaoMembro");
+  const nome = input.value.trim();
+
+  if(!nome){
+    alert("Digite o nome do membro.");
+    return;
+  }
+
+  membrosAcao.push(nome);
+  input.value = "";
+  atualizarListaMembrosAcao();
+}
+
+function removerMembroAcao(index){
+  membrosAcao.splice(index, 1);
+  atualizarListaMembrosAcao();
+}
+
+function gerarResumoAcao(){
+  const nome = document.getElementById("acaoNome").value.trim() || "Ação Vanilla";
+  const local = document.getElementById("acaoLocal").value.trim() || "Não informado";
+  const horario = document.getElementById("acaoHorario").value.trim() || "Não informado";
+  const responsavel = document.getElementById("acaoResponsavel").value.trim() || "Não informado";
+  const status = document.getElementById("acaoStatus").value;
+  const obs = document.getElementById("acaoObs").value.trim() || "Sem observações";
+
+  const checks = Array.from(document.querySelectorAll(".acaoCheck")).map(chk => {
+    return `${chk.checked ? "✅" : "❌"} ${chk.value}`;
+  }).join("\n");
+
+  const membros = membrosAcao.length
+    ? membrosAcao.map(m => `- ${m}`).join("\n")
+    : "- Nenhum confirmado";
+
+  const resumo =
+`📌 AÇÃO VANILLA
+
+🎯 Nome: ${nome}
+📍 Local: ${local}
+⏰ Horário: ${horario}
+👑 Responsável: ${responsavel}
+📊 Status: ${status}
+
+✅ Confirmados:
+${membros}
+
+📋 Checklist:
+${checks}
+
+📝 Observações:
+${obs}`;
+
+  document.getElementById("acaoResumo").value = resumo;
+}
+
+function copiarResumoAcao(){
+  const el = document.getElementById("acaoResumo");
+
+  if(!el.value){
+    gerarResumoAcao();
+  }
+
+  el.focus();
+  el.select();
+  el.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(el.value)
+    .then(() => alert("Resumo da ação copiado!"))
+    .catch(() => {
+      document.execCommand("copy");
+      alert("Resumo da ação copiado!");
+    });
+}
+
+function limparAcao(){
+  document.getElementById("acaoNome").value = "";
+  document.getElementById("acaoLocal").value = "";
+  document.getElementById("acaoHorario").value = "";
+  document.getElementById("acaoResponsavel").value = "";
+  document.getElementById("acaoStatus").value = "Planejada";
+  document.getElementById("acaoMembro").value = "";
+  document.getElementById("acaoObs").value = "";
+  document.getElementById("acaoResumo").value = "";
+  document.querySelectorAll(".acaoCheck").forEach(chk => chk.checked = false);
+  membrosAcao = [];
+  atualizarListaMembrosAcao();
+}
+
 
 verificarLogin();
 
