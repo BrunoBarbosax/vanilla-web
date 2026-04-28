@@ -172,19 +172,53 @@ button:hover{transform:translateY(-1px);filter:brightness(1.08)}
   background:rgba(255,0,183,.18);
 }
 
-.badge-ok{
-  color:#55efc4;
+.badge-ok{color:#55efc4;font-weight:bold}
+.badge-no{color:#ff5e7a;font-weight:bold}
+
+.bind-preview{
+  min-height:80px;
+  background:#000;
+  border-radius:14px;
+  margin-top:8px;
+  padding:18px;
+  text-align:center;
   font-weight:bold;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:auto;
 }
 
-.badge-no{
-  color:#ff5e7a;
-  font-weight:bold;
+.bind-buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:8px 0 12px;
+}
+
+.bind-buttons button{
+  width:100%;
+  margin:0;
+  font-size:13px;
+}
+
+#bindResultado{
+  min-height:96px;
+  font-family:Consolas, monospace;
+}
+
+.help{
+  font-size:13px;
+  color:#ccc;
+  margin-top:-6px;
+  margin-bottom:10px;
 }
 
 @media(max-width:900px){
   .grid{grid-template-columns:1fr}
   h1{font-size:30px}
+}
+
+@media(max-width:700px){
+  .bind-buttons{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -284,6 +318,49 @@ button:hover{transform:translateY(-1px);filter:brightness(1.08)}
       <div id="sugestoesFarc" class="suggestions"></div>
       <button onclick="consultarParceria()">Consultar</button>
       <div id="resParceria" class="result">Digite o nome da FARC para consultar.</div>
+    </div>
+
+    <div class="card">
+      <h2>🔥 Gerador de Binds FiveM</h2>
+
+      <input id="bindTecla" placeholder="Tecla. Ex: n, O, F3, K">
+      <textarea id="bindFrase" rows="4" placeholder="Digite a frase da bind. Ex: ❤ FAZ CHUVINHA AMOR | 2717 MARY❤"></textarea>
+
+      <select id="bindCor">
+        <option value="~w~">⚪ Branco</option>
+        <option value="~r~">🔴 Vermelho</option>
+        <option value="~y~">🟡 Amarelo</option>
+        <option value="~g~">🟢 Verde</option>
+        <option value="~b~">🔵 Azul</option>
+        <option value="~q~">🩷 Rosa</option>
+        <option value="~p~">🟣 Roxo</option>
+        <option value="~v~">⚫ Preto</option>
+      </select>
+
+      <input id="bindFontSize" type="number" value="100" min="10" max="500" placeholder="Tamanho. Ex: 70, 100, 150">
+
+      <select id="bindModo">
+        <option value="grande">Grande com font size</option>
+        <option value="normal">Normal sem font size</option>
+        <option value="multicolor">Multicolor com font size</option>
+      </select>
+
+      <div class="help">
+        Formato funcional: bind keyboard "n" "me ~w~ &lt;font size='100'&gt;❤ FAZ CHUVINHA AMOR | 2717 MARY❤"
+      </div>
+
+      <div class="bind-buttons">
+        <button type="button" onclick="modeloChuvinha()">❤ Chuvinha</button>
+        <button type="button" onclick="modeloAcao()">💥 Ação</button>
+        <button type="button" onclick="modeloVenda()">💰 Venda</button>
+        <button type="button" onclick="limparBind()">🧹 Limpar</button>
+      </div>
+
+      <button type="button" onclick="gerarBind()">Gerar bind</button>
+      <button type="button" class="btn2" onclick="copiarBind()">Copiar bind</button>
+
+      <div id="bindPreview" class="bind-preview">Preview aqui</div>
+      <textarea id="bindResultado" readonly placeholder="A bind pronta vai aparecer aqui..."></textarea>
     </div>
   </div>
 
@@ -638,6 +715,112 @@ async function carregarHistorico(){
       ${item.imagem ? `<br><img src="${item.imagem}">` : ""}
     </div>
   `).join("");
+}
+
+/* ===== GERADOR DE BINDS NO FORMATO QUE FUNCIONOU ===== */
+const coresPreview = {
+  "~y~": "#facc15",
+  "~r~": "#ef4444",
+  "~g~": "#22c55e",
+  "~b~": "#3b82f6",
+  "~q~": "#ec4899",
+  "~p~": "#a855f7",
+  "~v~": "#111111",
+  "~w~": "#ffffff"
+};
+
+function gerarBind(){
+  const tecla = (document.getElementById("bindTecla").value || "n").trim();
+  const frase = (document.getElementById("bindFrase").value || "❤ FAZ CHUVINHA AMOR | 2717 MARY❤").trim();
+  const cor = document.getElementById("bindCor").value || "~w~";
+  const fontSize = document.getElementById("bindFontSize").value || "100";
+  const modo = document.getElementById("bindModo").value || "grande";
+
+  let comando = "";
+
+  if(modo === "normal"){
+    comando = `me ${cor} ${frase}`;
+  }
+
+  if(modo === "grande"){
+    comando = `me ${cor} <font size='${fontSize}'>${frase}`;
+  }
+
+  if(modo === "multicolor"){
+    const cores = ["~w~","~r~","~y~","~g~","~b~","~p~","~q~"];
+    const palavrasColoridas = frase.split(" ").map((palavra, i) => {
+      return `${cores[i % cores.length]} ${palavra}`;
+    }).join(" ");
+
+    comando = `me ${cor} <font size='${fontSize}'>${palavrasColoridas}`;
+  }
+
+  const bind = `bind keyboard "${tecla}" "${comando}"`;
+  document.getElementById("bindResultado").value = bind;
+
+  const preview = document.getElementById("bindPreview");
+  preview.innerText = frase;
+  preview.style.color = coresPreview[cor] || "#ffffff";
+  preview.style.fontSize = Math.max(18, Number(fontSize) / 2.5) + "px";
+}
+
+function copiarBind(){
+  const el = document.getElementById("bindResultado");
+
+  if(!el.value){
+    gerarBind();
+  }
+
+  el.focus();
+  el.select();
+  el.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(el.value)
+    .then(() => alert("Bind copiada!"))
+    .catch(() => {
+      document.execCommand("copy");
+      alert("Bind copiada!");
+    });
+}
+
+function limparBind(){
+  document.getElementById("bindTecla").value = "";
+  document.getElementById("bindFrase").value = "";
+  document.getElementById("bindCor").value = "~w~";
+  document.getElementById("bindFontSize").value = "100";
+  document.getElementById("bindModo").value = "grande";
+  document.getElementById("bindResultado").value = "";
+  const preview = document.getElementById("bindPreview");
+  preview.innerText = "Preview aqui";
+  preview.style.color = "#ffffff";
+  preview.style.fontSize = "18px";
+}
+
+function modeloChuvinha(){
+  document.getElementById("bindTecla").value = "n";
+  document.getElementById("bindFrase").value = "❤ FAZ CHUVINHA AMOR | 2717 MARY❤";
+  document.getElementById("bindCor").value = "~w~";
+  document.getElementById("bindFontSize").value = "100";
+  document.getElementById("bindModo").value = "grande";
+  gerarBind();
+}
+
+function modeloAcao(){
+  document.getElementById("bindTecla").value = "F3";
+  document.getElementById("bindFrase").value = "AÇÃO FECHADA RECUA OU VAI TOMAR";
+  document.getElementById("bindCor").value = "~r~";
+  document.getElementById("bindFontSize").value = "100";
+  document.getElementById("bindModo").value = "grande";
+  gerarBind();
+}
+
+function modeloVenda(){
+  document.getElementById("bindTecla").value = "F4";
+  document.getElementById("bindFrase").value = "VANILLA ON VENDAS E PARCERIAS DISPONÍVEIS";
+  document.getElementById("bindCor").value = "~q~";
+  document.getElementById("bindFontSize").value = "100";
+  document.getElementById("bindModo").value = "multicolor";
+  gerarBind();
 }
 
 verificarLogin();
