@@ -816,6 +816,7 @@ const farcsParceiras = {
 };
 
 let acaoPendente = null;
+let membrosAcao = [];
 
 function moeda(v){
   return "R$ " + Number(v || 0).toLocaleString("pt-BR", {
@@ -944,252 +945,12 @@ async function login(){
     return;
   }
 
-  await 
-/* ===== PÁGINAS DO PAINEL ===== */
-function abrirPaginaPainel(id, botao){
-  document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
-  const pagina = document.getElementById(id);
-  if(pagina) pagina.classList.add("active");
-
-  document.querySelectorAll(".nav-pages button").forEach(b => b.classList.remove("active"));
-  if(botao) botao.classList.add("active");
-}
-
-/* ===== PLANEJAMENTO DE AÇÕES ===== */
-let membrosAcao = [];
-
-function atualizarListaMembrosAcao(){
-  const box = document.getElementById("listaMembrosAcao");
-
-  if(!membrosAcao.length){
-    box.innerHTML = "Nenhum membro confirmado ainda.";
-    return;
-  }
-
-  box.innerHTML = membrosAcao.map((membro, index) => `
-    <span class="member-chip">
-      ${membro}
-      <button type="button" onclick="removerMembroAcao(${index})">x</button>
-    </span>
-  `).join("");
-}
-
-function adicionarMembroAcao(){
-  const input = document.getElementById("acaoMembro");
-  const nome = input.value.trim();
-
-  if(!nome){
-    alert("Digite o nome do membro.");
-    return;
-  }
-
-  membrosAcao.push(nome);
-  input.value = "";
-  atualizarListaMembrosAcao();
-}
-
-function removerMembroAcao(index){
-  membrosAcao.splice(index, 1);
-  atualizarListaMembrosAcao();
-}
-
-function gerarResumoAcao(){
-  const nome = document.getElementById("acaoNome").value.trim() || "Ação Vanilla";
-  const local = document.getElementById("acaoLocal").value.trim() || "Não informado";
-  const horario = document.getElementById("acaoHorario").value.trim() || "Não informado";
-  const responsavel = document.getElementById("acaoResponsavel").value.trim() || "Não informado";
-  const status = document.getElementById("acaoStatus").value;
-  const obs = document.getElementById("acaoObs").value.trim() || "Sem observações";
-
-  const checks = Array.from(document.querySelectorAll(".acaoCheck")).map(chk => {
-    return `${chk.checked ? "✅" : "❌"} ${chk.value}`;
-  }).join("\n");
-
-  const membros = membrosAcao.length
-    ? membrosAcao.map(m => `- ${m}`).join("\n")
-    : "- Nenhum confirmado";
-
-  const resumo =
-`📌 AÇÃO VANILLA
-
-🎯 Nome: ${nome}
-📍 Local: ${local}
-⏰ Horário: ${horario}
-👑 Responsável: ${responsavel}
-📊 Status: ${status}
-
-✅ Confirmados:
-${membros}
-
-📋 Checklist:
-${checks}
-
-📝 Observações:
-${obs}`;
-
-  document.getElementById("acaoResumo").value = resumo;
-}
-
-function copiarResumoAcao(){
-  const el = document.getElementById("acaoResumo");
-
-  if(!el.value){
-    gerarResumoAcao();
-  }
-
-  el.focus();
-  el.select();
-  el.setSelectionRange(0, 99999);
-
-  navigator.clipboard.writeText(el.value)
-    .then(() => alert("Resumo da ação copiado!"))
-    .catch(() => {
-      document.execCommand("copy");
-      alert("Resumo da ação copiado!");
-    });
-}
-
-function limparAcao(){
-  document.getElementById("acaoNome").value = "";
-  document.getElementById("acaoLocal").value = "";
-  document.getElementById("acaoHorario").value = "";
-  document.getElementById("acaoResponsavel").value = "";
-  document.getElementById("acaoStatus").value = "Planejada";
-  document.getElementById("acaoMembro").value = "";
-  document.getElementById("acaoObs").value = "";
-  document.getElementById("acaoResumo").value = "";
-  document.querySelectorAll(".acaoCheck").forEach(chk => chk.checked = false);
-  membrosAcao = [];
-  atualizarListaMembrosAcao();
-}
-
-
-verificarLogin();
+  await verificarLogin();
 }
 
 async function logout(){
   await fetch("/api/logout");
-  await 
-/* ===== PÁGINAS DO PAINEL ===== */
-function abrirPaginaPainel(id, botao){
-  document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
-  const pagina = document.getElementById(id);
-  if(pagina) pagina.classList.add("active");
-
-  document.querySelectorAll(".nav-pages button").forEach(b => b.classList.remove("active"));
-  if(botao) botao.classList.add("active");
-}
-
-/* ===== PLANEJAMENTO DE AÇÕES ===== */
-let membrosAcao = [];
-
-function atualizarListaMembrosAcao(){
-  const box = document.getElementById("listaMembrosAcao");
-
-  if(!membrosAcao.length){
-    box.innerHTML = "Nenhum membro confirmado ainda.";
-    return;
-  }
-
-  box.innerHTML = membrosAcao.map((membro, index) => `
-    <span class="member-chip">
-      ${membro}
-      <button type="button" onclick="removerMembroAcao(${index})">x</button>
-    </span>
-  `).join("");
-}
-
-function adicionarMembroAcao(){
-  const input = document.getElementById("acaoMembro");
-  const nome = input.value.trim();
-
-  if(!nome){
-    alert("Digite o nome do membro.");
-    return;
-  }
-
-  membrosAcao.push(nome);
-  input.value = "";
-  atualizarListaMembrosAcao();
-}
-
-function removerMembroAcao(index){
-  membrosAcao.splice(index, 1);
-  atualizarListaMembrosAcao();
-}
-
-function gerarResumoAcao(){
-  const nome = document.getElementById("acaoNome").value.trim() || "Ação Vanilla";
-  const local = document.getElementById("acaoLocal").value.trim() || "Não informado";
-  const horario = document.getElementById("acaoHorario").value.trim() || "Não informado";
-  const responsavel = document.getElementById("acaoResponsavel").value.trim() || "Não informado";
-  const status = document.getElementById("acaoStatus").value;
-  const obs = document.getElementById("acaoObs").value.trim() || "Sem observações";
-
-  const checks = Array.from(document.querySelectorAll(".acaoCheck")).map(chk => {
-    return `${chk.checked ? "✅" : "❌"} ${chk.value}`;
-  }).join("\n");
-
-  const membros = membrosAcao.length
-    ? membrosAcao.map(m => `- ${m}`).join("\n")
-    : "- Nenhum confirmado";
-
-  const resumo =
-`📌 AÇÃO VANILLA
-
-🎯 Nome: ${nome}
-📍 Local: ${local}
-⏰ Horário: ${horario}
-👑 Responsável: ${responsavel}
-📊 Status: ${status}
-
-✅ Confirmados:
-${membros}
-
-📋 Checklist:
-${checks}
-
-📝 Observações:
-${obs}`;
-
-  document.getElementById("acaoResumo").value = resumo;
-}
-
-function copiarResumoAcao(){
-  const el = document.getElementById("acaoResumo");
-
-  if(!el.value){
-    gerarResumoAcao();
-  }
-
-  el.focus();
-  el.select();
-  el.setSelectionRange(0, 99999);
-
-  navigator.clipboard.writeText(el.value)
-    .then(() => alert("Resumo da ação copiado!"))
-    .catch(() => {
-      document.execCommand("copy");
-      alert("Resumo da ação copiado!");
-    });
-}
-
-function limparAcao(){
-  document.getElementById("acaoNome").value = "";
-  document.getElementById("acaoLocal").value = "";
-  document.getElementById("acaoHorario").value = "";
-  document.getElementById("acaoResponsavel").value = "";
-  document.getElementById("acaoStatus").value = "Planejada";
-  document.getElementById("acaoMembro").value = "";
-  document.getElementById("acaoObs").value = "";
-  document.getElementById("acaoResumo").value = "";
-  document.querySelectorAll(".acaoCheck").forEach(chk => chk.checked = false);
-  membrosAcao = [];
-  atualizarListaMembrosAcao();
-}
-
-
-verificarLogin();
+  await verificarLogin();
 }
 
 async function verificarLogin(){
@@ -1238,8 +999,8 @@ function calcVenda(){
 
   const preco = tabelaVenda[item][tipo];
   const total = preco * qtd;
-  const operador = total * 0.30;
-  const farc = total * 0.70;
+  const funcionario = total * 0.40;
+  const farc = total * 0.60;
 
   const texto =
 `📦 Item: ${nomes[item]}
@@ -1247,8 +1008,8 @@ function calcVenda(){
 💰 Unitário: ${moeda(preco)}
 📊 Quantidade: ${qtd}
 💰 Total: ${moeda(total)}
-👤 Operador 30%: ${moeda(operador)}
-🏦 FARC 70%: ${moeda(farc)}`;
+👤 Funcionário 40%: ${moeda(funcionario)}
+🏦 FARC 60%: ${moeda(farc)}`;
 
   document.getElementById("resVenda").innerText = texto;
   abrirModal(texto,()=>salvar("Venda",texto));
@@ -1265,15 +1026,15 @@ function calcLavagem(){
 
   const taxaTotal = valor * taxa / 100;
   const cliente = valor - taxaTotal;
-  const operador = taxaTotal * 0.30;
-  const farc = taxaTotal * 0.70;
+  const funcionario = taxaTotal * 0.50;
+  const farc = taxaTotal * 0.50;
 
   const texto =
 `💰 Valor inicial: ${moeda(valor)}
 📤 Cliente recebe: ${moeda(cliente)}
 💵 Taxa total: ${moeda(taxaTotal)}
-👤 Operador 30%: ${moeda(operador)}
-🏦 FARC 70%: ${moeda(farc)}`;
+👤 Funcionário 50%: ${moeda(funcionario)}
+🏦 FARC 50%: ${moeda(farc)}`;
 
   document.getElementById("resLavagem").innerText = texto;
   abrirModal(texto,()=>salvar("Lavagem",texto));
@@ -1290,15 +1051,15 @@ function calcDesmanche(){
 
   const taxaTotal = valor * taxa / 100;
   const cliente = valor - taxaTotal;
-  const operador = taxaTotal * 0.30;
-  const farc = taxaTotal * 0.70;
+  const funcionario = taxaTotal * 0.50;
+  const farc = taxaTotal * 0.50;
 
   const texto =
 `💰 Valor inicial: ${moeda(valor)}
 📤 Cliente recebe: ${moeda(cliente)}
 💵 Taxa total: ${moeda(taxaTotal)}
-👤 Operador 30%: ${moeda(operador)}
-🏦 FARC 70%: ${moeda(farc)}`;
+👤 Funcionário 50%: ${moeda(funcionario)}
+🏦 FARC 50%: ${moeda(farc)}`;
 
   document.getElementById("resDesmanche").innerText = texto;
   abrirModal(texto,()=>salvar("Desmanche",texto));
@@ -1467,7 +1228,6 @@ function modeloVenda(){
   gerarBind();
 }
 
-
 /* ===== PÁGINAS DO PAINEL ===== */
 function abrirPaginaPainel(id, botao){
   document.querySelectorAll(".page-panel").forEach(p => p.classList.remove("active"));
@@ -1479,8 +1239,6 @@ function abrirPaginaPainel(id, botao){
 }
 
 /* ===== PLANEJAMENTO DE AÇÕES ===== */
-let membrosAcao = [];
-
 function atualizarListaMembrosAcao(){
   const box = document.getElementById("listaMembrosAcao");
 
@@ -1586,7 +1344,6 @@ function limparAcao(){
   atualizarListaMembrosAcao();
 }
 
-
 verificarLogin();
 
 if ("serviceWorker" in navigator) {
@@ -1597,7 +1354,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
-
 
 <!-- RODAPÉ ALFATECNOLOGIA -->
 <div class="footer-alfatec">
