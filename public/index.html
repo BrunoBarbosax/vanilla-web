@@ -999,8 +999,9 @@ function calcVenda(){
 
   const preco = tabelaVenda[item][tipo];
   const total = preco * qtd;
-  const funcionario = total * 0.40;
-  const farc = total * 0.60;
+
+  const operador = total * 0.30;
+  const farc = total * 0.70;
 
   const texto =
 `📦 Item: ${nomes[item]}
@@ -1008,8 +1009,8 @@ function calcVenda(){
 💰 Unitário: ${moeda(preco)}
 📊 Quantidade: ${qtd}
 💰 Total: ${moeda(total)}
-👤 Funcionário 40%: ${moeda(funcionario)}
-🏦 FARC 60%: ${moeda(farc)}`;
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
 
   document.getElementById("resVenda").innerText = texto;
   abrirModal(texto,()=>salvar("Venda",texto));
@@ -1026,15 +1027,16 @@ function calcLavagem(){
 
   const taxaTotal = valor * taxa / 100;
   const cliente = valor - taxaTotal;
-  const funcionario = taxaTotal * 0.50;
-  const farc = taxaTotal * 0.50;
+
+  const operador = taxaTotal * 0.30;
+  const farc = taxaTotal * 0.70;
 
   const texto =
 `💰 Valor inicial: ${moeda(valor)}
 📤 Cliente recebe: ${moeda(cliente)}
 💵 Taxa total: ${moeda(taxaTotal)}
-👤 Funcionário 50%: ${moeda(funcionario)}
-🏦 FARC 50%: ${moeda(farc)}`;
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
 
   document.getElementById("resLavagem").innerText = texto;
   abrirModal(texto,()=>salvar("Lavagem",texto));
@@ -1051,15 +1053,16 @@ function calcDesmanche(){
 
   const taxaTotal = valor * taxa / 100;
   const cliente = valor - taxaTotal;
-  const funcionario = taxaTotal * 0.50;
-  const farc = taxaTotal * 0.50;
+
+  const operador = taxaTotal * 0.30;
+  const farc = taxaTotal * 0.70;
 
   const texto =
 `💰 Valor inicial: ${moeda(valor)}
 📤 Cliente recebe: ${moeda(cliente)}
 💵 Taxa total: ${moeda(taxaTotal)}
-👤 Funcionário 50%: ${moeda(funcionario)}
-🏦 FARC 50%: ${moeda(farc)}`;
+👤 Operador 30%: ${moeda(operador)}
+🏦 FARC 70%: ${moeda(farc)}`;
 
   document.getElementById("resDesmanche").innerText = texto;
   abrirModal(texto,()=>salvar("Desmanche",texto));
