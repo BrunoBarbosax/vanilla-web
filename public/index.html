@@ -515,6 +515,72 @@ button:active{
   }
 }
 
+
+
+/* ===== FESTA / PDV VANILLA ===== */
+.festa-produtos{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(180px,1fr));
+  gap:10px;
+  margin:10px 0 14px;
+}
+
+.produto-festa{
+  width:100%;
+  min-height:78px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:4px;
+  text-align:left;
+  margin:0;
+  background:linear-gradient(145deg, rgba(255,0,183,.92), rgba(255,77,225,.74));
+}
+
+.produto-festa small{
+  opacity:.9;
+  font-size:13px;
+}
+
+.festa-search-box{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.festa-search-box input{
+  margin-bottom:8px;
+}
+
+.festa-lista{
+  max-height:420px;
+  overflow:auto;
+  padding-right:4px;
+}
+
+.festa-registro{
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  padding:13px;
+  margin-bottom:10px;
+  line-height:1.55;
+}
+
+.festa-registro b{
+  color:var(--gold);
+}
+
+.festa-total{
+  border-left-color:var(--gold);
+}
+
+@media(max-width:700px){
+  .festa-produtos{grid-template-columns:1fr}
+  .festa-search-box{flex-direction:column;align-items:stretch}
+}
+
 </style>
 </head>
 
@@ -563,6 +629,7 @@ button:active{
     <button type="button" onclick="abrirPaginaPainel('farmPage', this)">🌾 Farm</button>
     <button type="button" onclick="abrirPaginaPainel('bindsPage', this)">🔥 Binds</button>
     <button type="button" onclick="abrirPaginaPainel('acoesPage', this)">📌 Ações</button>
+    <button type="button" onclick="abrirPaginaPainel('festaPage', this)">🎉 Festa</button>
   </div>
 
   <!-- PÁGINA OPERAÇÕES -->
@@ -764,6 +831,67 @@ Cores:
 ✅ Marque checklist de rádio, colete, fuga etc.
 ✅ Gere o resumo e cole no Discord/WhatsApp.
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÁGINA FESTA -->
+  <div id="festaPage" class="page-panel">
+    <div class="grid">
+      <div class="card">
+        <h2>🎉 Festa / PDV Vanilla</h2>
+
+        <input id="festaNome" placeholder="Nome da pessoa que pagou">
+        <input id="festaId" placeholder="ID da pessoa">
+        <input id="festaResponsavel" placeholder="Responsável pelo atendimento">
+        <textarea id="festaObs" rows="3" placeholder="Observação opcional"></textarea>
+
+        <div class="help">
+          Preencha nome e ID, depois clique no produto comprado. O valor entra automático no registro.
+        </div>
+
+        <div class="festa-produtos">
+          <button type="button" class="produto-festa" onclick="registrarCompraFesta('Entrada', 50000)">
+            🎟️ Entrada
+            <small>R$ 50.000</small>
+          </button>
+          <button type="button" class="produto-festa" onclick="registrarCompraFesta('VIP sem toque', 250000)">
+            💃 VIP sem toque
+            <small>R$ 250.000</small>
+          </button>
+          <button type="button" class="produto-festa" onclick="registrarCompraFesta('VIP com toque', 500000)">
+            🔥 VIP com toque
+            <small>R$ 500.000</small>
+          </button>
+          <button type="button" class="produto-festa" onclick="registrarCompraFesta('Camarote', 500000)">
+            🛋️ Camarote
+            <small>R$ 500.000</small>
+          </button>
+          <button type="button" class="produto-festa" onclick="registrarCompraFesta('Motel quarto', 250000)">
+            🛏️ Motel quarto
+            <small>R$ 250.000</small>
+          </button>
+        </div>
+
+        <button type="button" class="btn2" onclick="limparCamposFesta()">Limpar campos</button>
+
+        <div id="festaUltimoRegistro" class="result">Aguardando compra.</div>
+      </div>
+
+      <div class="card">
+        <h2>🔎 Buscar registros</h2>
+
+        <div class="festa-search-box">
+          <input id="festaBusca" placeholder="Procurar por nome ou ID" oninput="renderizarRegistrosFesta()">
+          <button type="button" class="btn2" onclick="limparBuscaFesta()">Limpar busca</button>
+        </div>
+
+        <div id="festaResumo" class="result festa-total">Nenhum registro ainda.</div>
+
+        <button type="button" onclick="copiarResumoFesta()">Copiar resumo da festa</button>
+        <button type="button" class="btn2" onclick="limparRegistrosFesta()">Limpar registros</button>
+
+        <div id="festaLista" class="festa-lista"></div>
       </div>
     </div>
   </div>
@@ -1347,6 +1475,160 @@ function limparAcao(){
   atualizarListaMembrosAcao();
 }
 
+
+/* ===== FESTA / PDV VANILLA ===== */
+let registrosFesta = [];
+
+function carregarRegistrosFesta(){
+  try{
+    const salvo = localStorage.getItem("vanilla_festa_registros");
+    registrosFesta = salvo ? JSON.parse(salvo) : [];
+  }catch(e){
+    registrosFesta = [];
+  }
+  renderizarRegistrosFesta();
+}
+
+function salvarRegistrosFestaLocal(){
+  localStorage.setItem("vanilla_festa_registros", JSON.stringify(registrosFesta));
+}
+
+function registrarCompraFesta(produto, valor){
+  const nome = document.getElementById("festaNome").value.trim();
+  const id = document.getElementById("festaId").value.trim();
+  const responsavel = document.getElementById("festaResponsavel").value.trim() || "Não informado";
+  const obs = document.getElementById("festaObs").value.trim() || "Sem observação";
+
+  if(!nome || !id){
+    alert("Preencha nome e ID da pessoa.");
+    return;
+  }
+
+  const registro = {
+    nome,
+    id,
+    produto,
+    valor,
+    responsavel,
+    obs,
+    data: new Date().toLocaleString("pt-BR")
+  };
+
+  registrosFesta.unshift(registro);
+  salvarRegistrosFestaLocal();
+  renderizarRegistrosFesta();
+
+  const texto = formatarRegistroFesta(registro);
+  document.getElementById("festaUltimoRegistro").innerText = texto;
+
+  // Também salva no histórico geral do sistema, sem alterar a lógica existente.
+  salvar("Festa", texto);
+}
+
+function formatarRegistroFesta(r){
+  return `🎉 FESTA VANILLA
+
+👤 Nome: ${r.nome}
+🆔 ID: ${r.id}
+🛒 Produto: ${r.produto}
+💰 Valor pago: ${moeda(r.valor)}
+🙋 Responsável: ${r.responsavel}
+📝 Obs: ${r.obs}
+📅 Data: ${r.data}`;
+}
+
+function renderizarRegistrosFesta(){
+  const lista = document.getElementById("festaLista");
+  const resumo = document.getElementById("festaResumo");
+  if(!lista || !resumo) return;
+
+  const busca = normalizar(document.getElementById("festaBusca")?.value || "");
+  const filtrados = registrosFesta.filter(r => {
+    if(!busca) return true;
+    return normalizar(r.nome).includes(busca) || String(r.id).includes(busca);
+  });
+
+  const total = filtrados.reduce((soma, r) => soma + Number(r.valor || 0), 0);
+
+  resumo.innerText = `📊 Registros encontrados: ${filtrados.length}\n💰 Total vendido: ${moeda(total)}`;
+
+  if(!filtrados.length){
+    lista.innerHTML = `<div class="result">Nenhum registro encontrado.</div>`;
+    return;
+  }
+
+  lista.innerHTML = filtrados.map((r, index) => `
+    <div class="festa-registro">
+      <b>${r.produto}</b><br>
+      👤 ${r.nome} | ID: ${r.id}<br>
+      💰 ${moeda(r.valor)}<br>
+      🙋 ${r.responsavel}<br>
+      📝 ${r.obs}<br>
+      <small>${r.data}</small><br>
+      <button type="button" class="btn2" onclick="copiarRegistroFesta(${registrosFesta.indexOf(r)})">Copiar</button>
+      <button type="button" class="btn2" onclick="removerRegistroFesta(${registrosFesta.indexOf(r)})">Remover</button>
+    </div>
+  `).join("");
+}
+
+function copiarRegistroFesta(index){
+  const registro = registrosFesta[index];
+  if(!registro) return;
+
+  const texto = formatarRegistroFesta(registro);
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Registro copiado!"))
+    .catch(() => alert(texto));
+}
+
+function removerRegistroFesta(index){
+  if(index < 0 || !registrosFesta[index]) return;
+  if(!confirm("Remover este registro da festa?")) return;
+  registrosFesta.splice(index, 1);
+  salvarRegistrosFestaLocal();
+  renderizarRegistrosFesta();
+}
+
+function copiarResumoFesta(){
+  const total = registrosFesta.reduce((soma, r) => soma + Number(r.valor || 0), 0);
+  const porProduto = registrosFesta.reduce((acc, r) => {
+    acc[r.produto] = (acc[r.produto] || 0) + Number(r.valor || 0);
+    return acc;
+  }, {});
+
+  const linhasProdutos = Object.entries(porProduto).map(([produto, valor]) => {
+    return `- ${produto}: ${moeda(valor)}`;
+  }).join("\n") || "- Nenhum produto vendido";
+
+  const texto = `🎉 RESUMO FESTA VANILLA\n\n📊 Total de registros: ${registrosFesta.length}\n💰 Total vendido: ${moeda(total)}\n\n🛒 Por produto:\n${linhasProdutos}`;
+
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Resumo copiado!"))
+    .catch(() => alert(texto));
+}
+
+function limparBuscaFesta(){
+  document.getElementById("festaBusca").value = "";
+  renderizarRegistrosFesta();
+}
+
+function limparCamposFesta(){
+  document.getElementById("festaNome").value = "";
+  document.getElementById("festaId").value = "";
+  document.getElementById("festaResponsavel").value = "";
+  document.getElementById("festaObs").value = "";
+  document.getElementById("festaUltimoRegistro").innerText = "Aguardando compra.";
+}
+
+function limparRegistrosFesta(){
+  if(!confirm("Tem certeza que deseja limpar todos os registros da festa neste navegador?")) return;
+  registrosFesta = [];
+  salvarRegistrosFestaLocal();
+  renderizarRegistrosFesta();
+}
+
+
+carregarRegistrosFesta();
 verificarLogin();
 
 if ("serviceWorker" in navigator) {
